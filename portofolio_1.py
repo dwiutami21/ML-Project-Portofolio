@@ -6,7 +6,7 @@ import time
 st.set_page_config(page_title="ML Portfolio", page_icon="🌸", layout="wide", initial_sidebar_state="expanded")
 st.write("Welcome to my ML Portfolio!")
 
-select_var = st.sidebar.selectbox("Select page", ["Home", "Iris Species", "Heart Disease"])
+select_var = st.sidebar.selectbox("Select page", ["Home", "Iris Species", "Heart Disease","Obesity Level"])
 
 if select_var == "Home":
     st.title("🌸 Welcome to ML Portfolio")
@@ -20,8 +20,8 @@ if select_var == "Home":
         st.write("""
         Selamat datang di **ML Portfolio** saya! 
         
-        Aplikasi ini mendemonstrasikan penggunaan **Machine Learning** 
-        untuk klasifikasi data real-world menggunakan dataset terkenal seperti Iris.
+      Aplikasi ini menyajikan berbagai proyek Machine Learning  
+      yang mengimplementasikan model klasifikasi pada dataset real‑world, termasuk dataset populer seperti Iris.
         """)
     
     with col2:
@@ -34,6 +34,7 @@ if select_var == "Home":
     features = {
         "🔍 Iris Species Prediction": "Prediksi jenis Iris berdasarkan karakteristik bunga (Sepal & Petal measurements)",
         "❤️ Heart Disease Prediction": "Prediksi risiko penyakit jantung berdasarkan parameter kesehatan",
+        "🍔 Obesity Level Prediction": "Prediksi tingkat obesitas berdasarkan gaya hidup dan metrik tubuh",
         "📤 CSV Upload Support": "Upload file CSV dengan data Anda sendiri untuk batch prediction",
         "🎚️ Interactive Sliders": "Gunakan slider untuk input data secara manual",
         "⚡ Real-time Results": "Dapatkan hasil prediksi secara instant"
@@ -185,3 +186,151 @@ if select_var == "Heart Disease":
                     st.error(f"Prediction : {output}")
                     st.info("Please consult a doctor for further evaluation and advice.")
                 st.write("Probability of Heart Disease Risk: {:.2f}%".format(prediction_proba[:,1][0] * 100))
+
+elif select_var == "Obesity Level":
+
+    st.title("🍔 Obesity Level Prediction")
+    st.write("""
+    This app predicts **Obesity Level** based on lifestyle and body metrics.
+    
+    Model trained on Obesity Dataset (7 classes).
+    """)
+
+    st.sidebar.header("User Input Features")
+
+    # ===============================
+    # Upload CSV
+    # ===============================
+    uploaded_file = st.sidebar.file_uploader(
+        "Upload CSV file",
+        type=["csv"]
+    )
+
+    if uploaded_file is not None:
+        input_df = pd.read_csv(uploaded_file)
+
+    else:
+        # ===============================
+        # Manual Input
+        # ===============================
+        def user_input_features():
+            weight = st.sidebar.number_input(
+                "Weight (kg)", min_value=30.0, max_value=200.0, value=70.0
+            )
+            age = st.sidebar.number_input(
+                "Age", min_value=5, max_value=80, value=25
+            )
+
+            family_history = st.sidebar.radio(
+                "Family history with overweight",
+                ["Yes", "No"]
+            )
+            family_history = 1 if family_history == "Yes" else 0
+
+            favc = st.sidebar.radio(
+                "Frequent High Calorie Food (FAVC)",
+                ["Yes", "No"]
+            )
+            favc = 1 if favc == "Yes" else 0
+
+            fcvc = st.sidebar.slider(
+                "Vegetable consumption (FCVC)",
+                min_value=1.0, max_value=3.0, value=2.0, step=0.1
+            )
+
+            caec_map = {
+                "No": 0,
+                "Sometimes": 1,
+                "Frequently": 2,
+                "Always": 3
+            }
+            caec = st.sidebar.selectbox(
+                "Eating Between Meals (CAEC)",
+                list(caec_map.keys())
+            )
+            caec = caec_map[caec]
+
+            faf = st.sidebar.slider(
+                "Physical Activity Frequency (FAF)",
+                min_value=0.0, max_value=3.0, value=1.0, step=0.1
+            )
+
+            calc_map = {
+                "No": 0,
+                "Sometimes": 1,
+                "Frequently": 2,
+                "Always": 3
+            }
+            calc = st.sidebar.selectbox(
+                "Alcohol Consumption (CALC)",
+                list(calc_map.keys())
+            )
+            calc = calc_map[calc]
+
+            scc = st.sidebar.radio(
+                "Calories Consumption Monitoring (SCC)",
+                ["Yes", "No"]
+            )
+            scc = 1 if scc == "Yes" else 0
+
+            ch2o = st.sidebar.slider(
+                "Daily Water Intake (CH2O)",
+                min_value=1.0, max_value=3.0, value=2.0, step=0.1
+            )
+
+            data = {
+                "Weight": weight,
+                "family_history_with_overweight": family_history,
+                "Age": age,
+                "FAVC": favc,
+                "FCVC": fcvc,
+                "CAEC": caec,
+                "FAF": faf,
+                "CALC": calc,
+                "SCC": scc,
+                "CH2O": ch2o
+            }
+
+            return pd.DataFrame(data, index=[0])
+
+        input_df = user_input_features()
+
+    st.subheader("Input Data")
+    st.write(input_df)
+
+    if st.sidebar.button("Predict Obesity Level"):
+        with open("obesity_rf_tuned_model.pkl", "rb") as file:
+            model = pickle.load(file)
+
+        prediction = model.predict(input_df)[0]
+
+        label_map = {
+            0: "Insufficient Weight",
+            1: "Normal Weight",
+            2: "Overweight Level I",
+            3: "Overweight Level II",
+            4: "Obesity Type I",
+            5: "Obesity Type II",
+            6: "Obesity Type III"
+        }
+
+        st.subheader("Prediction Result")
+        with st.spinner("Predicting..."):
+            time.sleep(2)
+            st.success(f"Predicted Obesity Level: **{label_map[prediction]}**")
+        
+        # Add advice based on prediction
+        if prediction == 0:  # Insufficient Weight
+            st.info("Berat badan Anda diprediksi Insufficient Weight. Pertimbangkan untuk berkonsultasi dengan ahli gizi untuk memastikan Anda mendapatkan nutrisi yang cukup dan menjaga berat badan yang sehat.")
+        elif prediction == 1:  # Normal Weight
+            st.info("Berat badan Anda terprediksi Normal Weight. Tetap jaga kesehatan dengan diet sehat serta olahraga teratur.")
+        elif prediction == 2:  # Overweight Level I
+            st.info("Berat badan Anda diprediksi Overweight Level I. Tingkatkan aktivitas fisik harian dan perhatikan pola makan untuk mencegah peningkatan berat badan.")
+        elif prediction == 3:  # Overweight Level II
+            st.info("Berat badan Anda diprediksi Overweight Level II. Konsultasikan dengan dokter untuk rencana penurunan berat badan yang aman dan efektif.")
+        elif prediction == 4:  # Obesity Type I
+            st.info("Berat badan Anda menunjukkan Obesity Type I. Silakan konsultasikan dengan dokter untuk evaluasi kesehatan dan panduan pengelolaan berat badan.")
+        elif prediction == 5:  # Obesity Type II
+            st.info("Berat badan Anda menunjukkan Obesity Type II. Segera konsultasikan dengan spesialis kesehatan untuk intervensi medis yang diperlukan.")
+        elif prediction == 6:  # Obesity Type III
+            st.info("Berat badan Anda menunjukkan Obesity Type III. Segera cari bantuan medis profesional untuk penanganan yang komprehensif.")                
