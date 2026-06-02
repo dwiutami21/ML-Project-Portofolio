@@ -35,6 +35,7 @@ if select_var == "Home":
         "🔍 Iris Species Prediction": "Prediksi jenis Iris berdasarkan karakteristik bunga (Sepal & Petal measurements)",
         "❤️ Heart Disease Prediction": "Prediksi risiko penyakit jantung berdasarkan parameter kesehatan",
         "🍔 Obesity Level Prediction": "Prediksi tingkat obesitas berdasarkan gaya hidup dan metrik tubuh",
+        "🍎 Fruit Classification": "Klasifikasi jenis buah (Pepaya atau Alpukat) berdasarkan gambar",
         "📤 CSV Upload Support": "Upload file CSV dengan data Anda sendiri untuk batch prediction",
         "🎚️ Interactive Sliders": "Gunakan slider untuk input data secara manual",
         "⚡ Real-time Results": "Dapatkan hasil prediksi secara instant"
