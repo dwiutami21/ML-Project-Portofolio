@@ -346,7 +346,7 @@ elif select_var == "Fruit Classification": # New section for fruit classificatio
 
     if uploaded_file_fruit is not None:
         # Load the model
-        model_path = 'saved_model/fruit_classifier' # Adjust this path as per your deployment
+        model_path = 'model_buah.pkl' 
         loaded_fruit_model = None
         try:
             loaded_fruit_model = tf.keras.models.load_model(model_path)
