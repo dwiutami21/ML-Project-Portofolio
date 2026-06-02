@@ -6,7 +6,7 @@ import time
 st.set_page_config(page_title="ML Portfolio", page_icon="🌸", layout="wide", initial_sidebar_state="expanded")
 st.write("Welcome to my ML Portfolio!")
 
-select_var = st.sidebar.selectbox("Select page", ["Home", "Iris Species", "Heart Disease","Obesity Level"])
+select_var = st.sidebar.selectbox("Select page", ["Home", "Iris Species", "Heart Disease","Obesity Level","Fruit Classification"])
 
 if select_var == "Home":
     st.title("🌸 Welcome to ML Portfolio")
@@ -333,4 +333,53 @@ elif select_var == "Obesity Level":
         elif prediction == 5:  # Obesity Type II
             st.info("Berat badan Anda menunjukkan Obesity Type II. Segera konsultasikan dengan spesialis kesehatan untuk intervensi medis yang diperlukan.")
         elif prediction == 6:  # Obesity Type III
-            st.info("Berat badan Anda menunjukkan Obesity Type III. Segera cari bantuan medis profesional untuk penanganan yang komprehensif.")                
+            st.info("Berat badan Anda menunjukkan Obesity Type III. Segera cari bantuan medis profesional untuk penanganan yang komprehensif.")
+
+elif select_var == "Fruit Classification": # New section for fruit classification
+    st.title("🍎 Fruit Classification Papaya and Avocado")
+    st.write("""
+    Aplikasi ini memprediksi jenis buah (Pepaya atau Alpukat) dari gambar yang diunggah.
+    """)
+
+    st.sidebar.header("Unggah Gambar Buah")
+    uploaded_file_fruit = st.sidebar.file_uploader("Pilih gambar buah...", type=["jpg", "jpeg", "png"])
+
+    if uploaded_file_fruit is not None:
+        # Load the model
+        model_path = 'saved_model/fruit_classifier' # Adjust this path as per your deployment
+        loaded_fruit_model = None
+        try:
+            loaded_fruit_model = tf.keras.models.load_model(model_path)
+            st.success("Model Klasifikasi Buah berhasil dimuat!")
+        except Exception as e:
+            st.error(f"Gagal memuat model klasifikasi buah. Pastikan model berada di path yang benar: {model_path}. Error: {e}")
+
+        if loaded_fruit_model:
+            # Define parameters as used during training
+            fruit_class_names = ['alpukat', 'pepaya'] # Ensure this matches the order during training
+            fruit_img_height = 128
+            fruit_img_width = 128
+
+            # Prediction function
+            def predict_fruit_image(image_file, model, class_names, img_height, img_width):
+                image = Image.open(image_file).convert('RGB') # Ensure image is RGB
+                image = image.resize((img_width, img_height))
+                img_array = np.asarray(image)
+                img_array = tf.expand_dims(img_array, 0) # Create a batch
+
+                predictions = model.predict(img_array)
+                score = tf.nn.softmax(predictions[0])
+
+                predicted_class = class_names[np.argmax(score)]
+                confidence = 100 * np.max(score)
+                return predicted_class, confidence
+
+            st.image(uploaded_file_fruit, caption='Gambar Buah Anda.', use_column_width=True)
+            st.write("Memprediksi...")
+
+            with st.spinner('Menganalisis gambar...'):
+                time.sleep(1) # Simulate processing time
+                label, confidence = predict_fruit_image(uploaded_file_fruit, loaded_fruit_model, fruit_class_names, fruit_img_height, fruit_img_width)
+                st.success(f"Prediksi: **{label}** dengan kepercayaan **{confidence:.2f}%**")
+    else:
+        st.info("Silakan unggah gambar buah (alpukat atau pepaya) di sidebar.")
