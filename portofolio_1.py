@@ -335,51 +335,65 @@ elif select_var == "Obesity Level":
         elif prediction == 6:  # Obesity Type III
             st.info("Berat badan Anda menunjukkan Obesity Type III. Segera cari bantuan medis profesional untuk penanganan yang komprehensif.")
 
-elif select_var == "Fruit Classification": # New section for fruit classification
-    st.title("🍎 Fruit Classification Papaya and Avocado")
+elif select_var == "Fruit Classification": 
+    st.title("🍎 Klasifikasi Buah Pepaya dan Alpukat")
     st.write("""
-    Aplikasi ini memprediksi jenis buah (Pepaya atau Alpukat) dari gambar yang diunggah.
+    Aplikasi ini memprediksi jenis buah (Pepaya atau Alpukat) dari gambar yang diunggah menggunakan model berbasis Pickle.
     """)
 
     st.sidebar.header("Unggah Gambar Buah")
     uploaded_file_fruit = st.sidebar.file_uploader("Pilih gambar buah...", type=["jpg", "jpeg", "png"])
 
     if uploaded_file_fruit is not None:
-        # Load the model
-        model_path = 'model_buah.pkl' 
+        # Load menggunakan pickle langsung dari root directory seperti model lainnya
         loaded_fruit_model = None
         try:
-            loaded_fruit_model = tf.keras.models.load_model(model_path)
+            with open("model_buah.pkl", 'rb') as file:
+                loaded_fruit_model = pickle.load(file)
             st.success("Model Klasifikasi Buah berhasil dimuat!")
         except Exception as e:
-            st.error(f"Gagal memuat model klasifikasi buah. Pastikan model berada di path yang benar: {model_path}. Error: {e}")
+            st.error(f"Gagal memuat model_buah.pkl. Pastikan file berada di root folder yang sama. Error: {e}")
 
         if loaded_fruit_model:
-            # Define parameters as used during training
-            fruit_class_names = ['alpukat', 'pepaya'] # Ensure this matches the order during training
+            fruit_class_names = ['alpukat', 'pepaya']
             fruit_img_height = 128
             fruit_img_width = 128
 
-            # Prediction function
+            # Fungsi pemrosesan citra untuk format model Machine Learning konvensional / Scikit-Learn
             def predict_fruit_image(image_file, model, class_names, img_height, img_width):
-                image = Image.open(image_file).convert('RGB') # Ensure image is RGB
+                # Membuka citra dan mengubah ukuran sesuai kebutuhan ekstraksi fitur model Anda
+                image = Image.open(image_file).convert('RGB')
                 image = image.resize((img_width, img_height))
                 img_array = np.asarray(image)
-                img_array = tf.expand_dims(img_array, 0) # Create a batch
+                
+                # Meratakan matriks piksel gambar menjadi 1 dimensi (Flatten) 
+                # Sering digunakan jika model pkl berupa SVM, Random Forest, atau KNN.
+                flat_img_array = img_array.flatten().reshape(1, -1)
 
-                predictions = model.predict(img_array)
-                score = tf.nn.softmax(predictions[0])
-
-                predicted_class = class_names[np.argmax(score)]
-                confidence = 100 * np.max(score)
+                # Melakukan prediksi kelas buah
+                prediction = model.predict(flat_img_array)[0]
+                
+                # Menangani output berupa index integer ataupun string teks langsung
+                if isinstance(prediction, (int, np.integer)):
+                    predicted_class = class_names[prediction]
+                else:
+                    predicted_class = str(prediction)
+                
+                # Mendapatkan nilai kepastian (jika model pkl mendukung predict_proba)
+                try:
+                    probabilities = model.predict_proba(flat_img_array)[0]
+                    confidence = np.max(probabilities) * 100
+                except AttributeError:
+                    confidence = 100.0  # Default jika algoritma pkl tidak memiliki fitur probabilitas
+                
                 return predicted_class, confidence
 
-            st.image(uploaded_file_fruit, caption='Gambar Buah Anda.', use_column_width=True)
+            st.image(uploaded_file_fruit, caption='Gambar Buah Anda.', use_container_width=True)
             st.write("Memprediksi...")
 
             with st.spinner('Menganalisis gambar...'):
-                time.sleep(1) # Simulate processing time
+                time.sleep(1) 
                 label, confidence = predict_fruit_image(uploaded_file_fruit, loaded_fruit_model, fruit_class_names, fruit_img_height, fruit_img_width)
-                st.success(f"Prediksi: **{label}** dengan kepercayaan **{confidence:.2f}%**")
+                st.success(f"Prediksi: **{label.upper()}** dengan tingkat keyakinan **{confidence:.2f}%**")
     else:
         st.info("Silakan unggah gambar buah (alpukat atau pepaya) di sidebar.")
